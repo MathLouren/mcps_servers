@@ -1,0 +1,27 @@
+name: eprodutos-mcp
+
+x-eprodutos-agents: &eprodutos-agents
+  image: ${EPRODUTOS_IMAGE:-eprodutos-agents:latest}
+  build:
+    context: .
+    dockerfile: EprodutosAgents/Dockerfile
+  env_file:
+    - ${EPRODUTOS_ENV_FILE:-./EprodutosAgents/eprodutos.env}
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  stdin_open: true
+  tty: false
+  restart: always
+
+services:
+  eprodutos-customer:
+    <<: *eprodutos-agents
+    environment:
+      DOTNET_ENVIRONMENT: Production
+      EPRODUTOS_ACCESS_PROFILE: customer
+
+  eprodutos-employee:
+    <<: *eprodutos-agents
+    environment:
+      DOTNET_ENVIRONMENT: Production
+      EPRODUTOS_ACCESS_PROFILE: employee

@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+.vs/
+.vscode/
+.idea/
+.env
+.env.*
+EprodutosAgents/eprodutos.env
