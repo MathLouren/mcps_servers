@@ -15,6 +15,8 @@ public sealed record ProductResponse(
 
 public sealed record CustomerStockResponse(
     [property: JsonPropertyName("pn")] string Pn,
+    [property: JsonPropertyName("category")] string? Category,
+    [property: JsonPropertyName("manufacturer")] string? Manufacturer,
     [property: JsonPropertyName("uf")] string? Uf,
     [property: JsonPropertyName("cd")] string? Cd,
     [property: JsonPropertyName("description")] string? Description,
@@ -27,6 +29,8 @@ public sealed record CustomerStockResponse(
 
 public sealed record EmployeeStockResponse(
     [property: JsonPropertyName("pn")] string Pn,
+    [property: JsonPropertyName("category")] string? Category,
+    [property: JsonPropertyName("manufacturer")] string? Manufacturer,
     [property: JsonPropertyName("uf")] string? Uf,
     [property: JsonPropertyName("cd")] string? Cd,
     [property: JsonPropertyName("description")] string? Description,
@@ -37,10 +41,7 @@ public sealed record EmployeeStockResponse(
     [property: JsonPropertyName("currency")] string? Currency,
     [property: JsonPropertyName("date")] DateTime? Date,
     [property: JsonPropertyName("status")] int? Status,
-    [property: JsonPropertyName("validity")] string? Validity,
-    [property: JsonPropertyName("raw_excel_id")] string? RawExcelId,
-    [property: JsonPropertyName("backlog")] object? Backlog,
-    [property: JsonPropertyName("backlog_forecast")] object? BacklogForecast);
+    [property: JsonPropertyName("validity")] string? Validity);
 
 public sealed record StockSummary(
     [property: JsonPropertyName("pn")] string Pn,
@@ -51,11 +52,15 @@ public sealed record StockSummary(
     [property: JsonPropertyName("currency")] string? Currency,
     [property: JsonPropertyName("valid_until")] string? ValidUntil);
 
-public sealed record ProductInventoryResponse(
-    [property: JsonPropertyName("pn")] string Pn,
-    [property: JsonPropertyName("product")] ProductDocument? Product,
-    [property: JsonPropertyName("stocks")] IReadOnlyList<StockDocument> Stocks,
-    [property: JsonPropertyName("summary")] StockSummary Summary);
+public sealed record ProductInventory(
+    string Pn,
+    ProductDocument? Product,
+    IReadOnlyList<StockWithProduct> Stocks,
+    StockSummary Summary);
+
+public sealed record StockWithProduct(
+    StockDocument Stock,
+    ProductDocument? Product);
 
 public sealed record ProductInventoryResponse<TStock>(
     [property: JsonPropertyName("pn")] string Pn,
@@ -74,10 +79,13 @@ public static class ResponseMapper
             product.Manufacturer);
     }
 
-    public static CustomerStockResponse ToCustomerResponse(this StockDocument stock)
+    public static CustomerStockResponse ToCustomerResponse(this StockWithProduct item)
     {
+        var stock = item.Stock;
         return new CustomerStockResponse(
             stock.Pn,
+            item.Product?.Category,
+            item.Product?.Manufacturer,
             stock.Uf,
             stock.Cd,
             stock.Description,
@@ -89,10 +97,13 @@ public static class ResponseMapper
             stock.Validity);
     }
 
-    public static EmployeeStockResponse ToEmployeeResponse(this StockDocument stock)
+    public static EmployeeStockResponse ToEmployeeResponse(this StockWithProduct item)
     {
+        var stock = item.Stock;
         return new EmployeeStockResponse(
             stock.Pn,
+            item.Product?.Category,
+            item.Product?.Manufacturer,
             stock.Uf,
             stock.Cd,
             stock.Description,
@@ -103,10 +114,7 @@ public static class ResponseMapper
             stock.Currency,
             stock.Date,
             stock.Status,
-            stock.Validity,
-            stock.RawExcelId,
-            stock.Backlog,
-            stock.BacklogForecast);
+            stock.Validity);
     }
 
     public static PagedResult<TOutput> MapItems<TInput, TOutput>(

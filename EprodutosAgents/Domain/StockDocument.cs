@@ -59,16 +59,4 @@ public sealed class StockDocument
     [BsonElement("validity")]
     [JsonPropertyName("validity")]
     public string? Validity { get; set; }
-
-    [BsonElement("raw_excel_id")]
-    [JsonPropertyName("raw_excel_id")]
-    public string? RawExcelId { get; set; }
-
-    [BsonElement("backlog")]
-    [JsonPropertyName("backlog")]
-    public object? Backlog { get; set; }
-
-    [BsonElement("backlog_forecast")]
-    [JsonPropertyName("backlog_forecast")]
-    public object? BacklogForecast { get; set; }
 }

@@ -10,6 +10,8 @@ public sealed record ProductSearchCriteria
 
     public string? Manufacturer { get; init; }
 
+    public IReadOnlyList<string>? AllowedManufacturers { get; init; }
+
     public int Page { get; init; } = 1;
 
     public int PageSize { get; init; } = 20;
@@ -21,6 +23,10 @@ public sealed record StockSearchCriteria
 
     public string? Pn { get; init; }
 
+    public string? Category { get; init; }
+
+    public string? Manufacturer { get; init; }
+
     public string? Uf { get; init; }
 
     public string? Cd { get; init; }
@@ -29,9 +35,17 @@ public sealed record StockSearchCriteria
 
     public bool AllowProcessSearch { get; init; }
 
+    public long? Price { get; init; }
+
+    public long? SalePrice { get; init; }
+
     public int? Status { get; init; }
 
     public string? Validity { get; init; }
+
+    public IReadOnlyList<string>? AllowedProcesses { get; init; }
+
+    public IReadOnlyList<string>? AllowedManufacturers { get; init; }
 
     public int Page { get; init; } = 1;
 

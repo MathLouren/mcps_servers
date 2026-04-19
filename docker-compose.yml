@@ -1,27 +1,22 @@
 name: eprodutos-mcp
 
-x-eprodutos-agents: &eprodutos-agents
-  image: ${EPRODUTOS_IMAGE:-eprodutos-agents:latest}
-  build:
-    context: .
-    dockerfile: EprodutosAgents/Dockerfile
-  env_file:
-    - ${EPRODUTOS_ENV_FILE:-./EprodutosAgents/eprodutos.env}
-  extra_hosts:
-    - "host.docker.internal:host-gateway"
-  stdin_open: true
-  tty: false
-  restart: always
-
 services:
-  eprodutos-customer:
-    <<: *eprodutos-agents
-    environment:
-      DOTNET_ENVIRONMENT: Production
-      EPRODUTOS_ACCESS_PROFILE: customer
-
-  eprodutos-employee:
-    <<: *eprodutos-agents
-    environment:
-      DOTNET_ENVIRONMENT: Production
-      EPRODUTOS_ACCESS_PROFILE: employee
+  eprodutos-mcp:
+    image: ${EPRODUTOS_IMAGE:-eprodutos-mcp:latest}
+    build:
+      context: .
+      dockerfile: EprodutosAgents/Dockerfile
+    env_file:
+      - ${EPRODUTOS_ENV_FILE:-./EprodutosAgents/eprodutos.env}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${EPRODUTOS_MCP_BIND_ADDRESS:-127.0.0.1}:${EPRODUTOS_MCP_PORT:-8080}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped

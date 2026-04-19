@@ -1,26 +1,29 @@
 using Microsoft.Extensions.Configuration;
+using MongoDB.Driver;
+using System.Text.RegularExpressions;
 
 namespace EprodutosAgents.Configuration;
 
-public sealed record MongoOptions(
+public sealed partial record MongoOptions(
     string ConnectionString,
     string DatabaseName,
     string ProductsCollectionName,
-    string StocksCollectionName)
+    string StocksCollectionName,
+    string UsersCollectionName,
+    string McpApiKeysCollectionName,
+    string McpAuditLogsCollectionName)
 {
     public const string SectionName = "MongoDb";
-
-    public string EffectiveConnectionString => NormalizeMongoConnectionString(ConnectionString);
 
     public static MongoOptions FromConfiguration(IConfiguration configuration)
     {
         var section = configuration.GetSection(SectionName);
 
-        return new MongoOptions(
+        var options = new MongoOptions(
             FirstNonEmpty(
                 Environment.GetEnvironmentVariable("EPRODUTOS_MONGO_CONNECTION_STRING"),
                 section["ConnectionString"],
-                "mongodb://localhost:27017/eprodutos"),
+                "mongodb://localhost:27017/"),
             FirstNonEmpty(
                 Environment.GetEnvironmentVariable("EPRODUTOS_MONGO_DATABASE"),
                 section["DatabaseName"],
@@ -32,7 +35,22 @@ public sealed record MongoOptions(
             FirstNonEmpty(
                 Environment.GetEnvironmentVariable("EPRODUTOS_STOCKS_COLLECTION"),
                 section["StocksCollectionName"],
-                "stocks"));
+                "stocks"),
+            FirstNonEmpty(
+                Environment.GetEnvironmentVariable("EPRODUTOS_USERS_COLLECTION"),
+                section["UsersCollectionName"],
+                "users"),
+            FirstNonEmpty(
+                Environment.GetEnvironmentVariable("EPRODUTOS_MCP_API_KEYS_COLLECTION"),
+                section["McpApiKeysCollectionName"],
+                "mcp_api_keys"),
+            FirstNonEmpty(
+                Environment.GetEnvironmentVariable("EPRODUTOS_MCP_AUDIT_LOGS_COLLECTION"),
+                section["McpAuditLogsCollectionName"],
+                "mcp_audit_logs"));
+
+        options.Validate();
+        return options;
     }
 
     private static string FirstNonEmpty(params string?[] values)
@@ -48,26 +66,31 @@ public sealed record MongoOptions(
         return string.Empty;
     }
 
-    private static string NormalizeMongoConnectionString(string connectionString)
+    private void Validate()
     {
-        if (!Uri.TryCreate(connectionString, UriKind.Absolute, out var uri) ||
-            !uri.Scheme.StartsWith("mongodb", StringComparison.OrdinalIgnoreCase))
-        {
-            return connectionString;
-        }
-
-        var pathParts = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (pathParts.Length <= 1)
-        {
-            return connectionString;
-        }
-
-        var pathStart = connectionString.IndexOf(uri.AbsolutePath, StringComparison.Ordinal);
-        if (pathStart < 0)
-        {
-            return connectionString;
-        }
-
-        return $"{connectionString[..pathStart]}/{pathParts[0]}{uri.Query}";
+        _ = MongoUrl.Create(ConnectionString);
+        ValidateMongoName(DatabaseName, nameof(DatabaseName));
+        ValidateMongoName(ProductsCollectionName, nameof(ProductsCollectionName));
+        ValidateMongoName(StocksCollectionName, nameof(StocksCollectionName));
+        ValidateMongoName(UsersCollectionName, nameof(UsersCollectionName));
+        ValidateMongoName(McpApiKeysCollectionName, nameof(McpApiKeysCollectionName));
+        ValidateMongoName(McpAuditLogsCollectionName, nameof(McpAuditLogsCollectionName));
     }
+
+    private static void ValidateMongoName(string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value) ||
+            value.Length > 120 ||
+            value.Contains('\0', StringComparison.Ordinal) ||
+            value.Contains('$', StringComparison.Ordinal) ||
+            value.Contains('/', StringComparison.Ordinal) ||
+            value.Contains('\\', StringComparison.Ordinal) ||
+            !MongoNameRegex().IsMatch(value))
+        {
+            throw new InvalidOperationException($"Configuracao MongoDB invalida: {parameterName}.");
+        }
+    }
+
+    [GeneratedRegex(@"^[A-Za-z0-9_.-]+$", RegexOptions.CultureInvariant)]
+    private static partial Regex MongoNameRegex();
 }

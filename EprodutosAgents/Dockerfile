@@ -12,10 +12,14 @@ RUN dotnet publish EprodutosAgents/EprodutosAgents.csproj \
     --output /app/publish \
     /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/runtime:8.0-bookworm-slim AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS runtime
 WORKDIR /app
 
 ENV DOTNET_ENVIRONMENT=Production
+ENV DOTNET_EnableDiagnostics=0
+ENV ASPNETCORE_URLS=http://0.0.0.0:8080
+
+EXPOSE 8080
 
 COPY --from=build /app/publish .
 
